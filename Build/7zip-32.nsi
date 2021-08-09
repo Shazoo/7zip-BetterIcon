@@ -1,7 +1,6 @@
 ;--------------------------------
 ;Defines
 
-!define WIN64
 
 !define VERSION_MAJOR 19
 !define VERSION_MINOR 00
@@ -24,7 +23,7 @@
 !define VERSION_SYS_POSTFIX "-x64"
 !endif
 !else
-!define VERSION_SYS_POSTFIX ""
+!define VERSION_SYS_POSTFIX "-x86"
 !endif
 
 
@@ -49,11 +48,9 @@
   OutFile "7z${VERSION_MAJOR}${VERSION_MINOR}${VERSION_POSTFIX}${VERSION_SYS_POSTFIX}.exe"
 
   ;Folder selection page
-  !ifdef WIN64
-  InstallDir "$PROGRAMFILES64\7-Zip"
-  !else
-  InstallDir "$PROGRAMFILES\7-Zip"
-  !endif
+
+  InstallDir "$PROGRAMFILES32\7-Zip"
+
 
   ;Get install folder from registry if available
   InstallDirRegKey HKCU "Software\7-Zip" "Path32"
@@ -175,12 +172,12 @@ Section
 
   # File files\7-zip.dll
 
-  File ..\CPP\7zip\Bundles\Format7zF\x64\7z.dll
-  File ..\CPP\7zip\UI\FileManager\x64\7zFM.exe
-  File ..\CPP\7zip\UI\GUI\x64\7zG.exe
-  File ..\CPP\7zip\UI\Console\x64\7z.exe
-  File ..\CPP\7zip\Bundles\SFXWin\x64\7z.sfx
-  File ..\CPP\7zip\Bundles\SFXCon\x64\7zCon.sfx
+  File ..\CPP\7zip\Bundles\Format7zF\x86\7z.dll
+  File ..\CPP\7zip\UI\FileManager\x86\7zFM.exe
+  File ..\CPP\7zip\UI\GUI\x86\7zG.exe
+  File ..\CPP\7zip\UI\Console\x86\7z.exe
+  File ..\CPP\7zip\Bundles\SFXWin\x86\7z.sfx
+  File ..\CPP\7zip\Bundles\SFXCon\x86\7zCon.sfx
 
   SetOutPath $INSTDIR\Lang
 
@@ -286,7 +283,7 @@ Section
 
   SetShellVarContext all
 
-  !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED ..\CPP\7zip\UI\Explorer\x64\7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
+  !insertmacro InstallLib DLL NOTSHARED REBOOT_NOTPROTECTED ..\CPP\7zip\UI\Explorer\x86\7-zip.dll $INSTDIR\7-zip.dll $INSTDIR
 
   ClearErrors
 
