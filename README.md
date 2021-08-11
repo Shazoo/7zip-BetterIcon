@@ -11,6 +11,10 @@
 
 * Use the nmake to build .
 
+  ```bash
+  cd <project_root>\CPP\7zip
+  ```
+
   x64:
 
   ```
@@ -29,4 +33,4 @@
 
 If you don't like these icons , check the git log for the detail of how to replace icons .
 
-Be free to send pull request or issue for better icons . 
+Be free to send pull request or issue for YOUR better icons . 
