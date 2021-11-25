@@ -350,7 +350,7 @@ STDMETHODIMP CHandler::GetArchiveProperty(PROPID propID, PROPVARIANT *value)
   COM_TRY_END
 }
 
-void GetFileTime(const Byte *p, NCOM::CPropVariant &prop)
+static void GetFileTime(const Byte *p, NCOM::CPropVariant &prop)
 {
   prop.vt = VT_FILETIME;
   prop.filetime.dwLowDateTime = Get32(p);
@@ -877,8 +877,10 @@ STDMETHODIMP CHandler::Open(IInStream *inStream, const UInt64 *, IArchiveOpenCal
         curStream = inStream;
       else
       {
-        UString fullName = seqName.GetNextName(i);
-        HRESULT result = openVolumeCallback->GetStream(fullName, &curStream);
+        if (!openVolumeCallback)
+          continue;
+        const UString fullName = seqName.GetNextName(i);
+        const HRESULT result = openVolumeCallback->GetStream(fullName, &curStream);
         if (result == S_FALSE)
           continue;
         if (result != S_OK)

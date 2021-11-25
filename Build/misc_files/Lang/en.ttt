@@ -248,19 +248,19 @@ There are no errors
 {0} object(s) selected
 Cannot create folder '{0}'
 Update operations are not supported for this archive.
-Can not open file '{0}' as archive
-Can not open encrypted archive '{0}'. Wrong password?
+Cannot open file '{0}' as archive
+Cannot open encrypted archive '{0}'. Wrong password?
 Unsupported archive type
 File {0} is already exist
 File '{0}' was modified.\nDo you want to update it in the archive?
-Can not update file\n'{0}'
+Cannot update file\n'{0}'
 Cannot start editor.
 The file looks like a virus (the file name contains long spaces in name).
 The operation cannot be called from a folder that has a long path.
 You must select one file
 You must select one or more files
 Too many items
-Can not open the file as {0} archive
+Cannot open the file as {0} archive
 The file is open as {0} archive
 The archive is open with offset
 3300
@@ -463,8 +463,8 @@ Combine Files
 &Combine to:
 Combining...
 Select only first part of split file
-Can not detect file as part of split file
-Can not find more than one part of split file
+Cannot detect file as part of split file
+Cannot find more than one part of split file
 7500
 Checksum calculating...
 Checksum information

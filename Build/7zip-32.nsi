@@ -2,8 +2,8 @@
 ;Defines
 
 
-!define VERSION_MAJOR 19
-!define VERSION_MINOR 00
+!define VERSION_MAJOR 21
+!define VERSION_MINOR 04
 !define VERSION_POSTFIX_FULL ""
 !ifdef WIN64
 !ifdef IA64
@@ -270,6 +270,10 @@ Section
   File misc_files\lang\yo.txt
   File misc_files\lang\zh-cn.txt
   File misc_files\lang\zh-tw.txt
+  File misc_files\lang\sw.txt
+  File misc_files\lang\tg.txt
+  File misc_files\lang\tk.txt
+  File misc_files\lang\uz-cyrl.txt
 
   SetOutPath $INSTDIR
 
@@ -474,7 +478,10 @@ Section Uninstall
   Delete $INSTDIR\Lang\yo.txt
   Delete $INSTDIR\Lang\zh-cn.txt
   Delete $INSTDIR\Lang\zh-tw.txt
-
+  Delete $INSTDIR\lang\sw.txt
+  Delete $INSTDIR\lang\tg.txt
+  Delete $INSTDIR\lang\tk.txt
+  Delete $INSTDIR\lang\uz-cyrl.txt
   RMDir $INSTDIR\Lang
 
   Delete /REBOOTOK $INSTDIR\7-zip.dll

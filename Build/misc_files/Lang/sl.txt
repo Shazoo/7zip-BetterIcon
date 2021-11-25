@@ -2,7 +2,7 @@
 ;       : tomazek
 ;  4.55 : miles
 ;
-; 18.05 : 2019-02-13 : Jadran Rudec
+; 21.00 : 2021-01-19 : Jadran Rudec
 ;
 ;
 ;
@@ -29,17 +29,17 @@ Po&moč
 440
 Da za &vse
 Ne za v&se
-Zaustavi
-Ponovno zaženi
-Ozadje
-Ospredje
+Ustavi
+Znova zaženi
+Ozad&je
+&Ospredje
 Premor
 Na premoru
 Ali ste prepričani, da želite preklicati?
 500
 Datoteka
 Urejanje
-&Pogled
+&Prikaz
 Priljubljene
 Orodja
 Pomoč
@@ -103,8 +103,8 @@ Vse&bina pomoči...
 &Vizitka 7-Zip...
 1003
 Pot
-M:\Downloads\7-Zip 1806\en.txt
-Pripona
+Ime
+Končnica
 Mapa
 Velikost
 Stisnjena velikost
@@ -155,7 +155,7 @@ Velikost sektorja
 Način
 Simbolna povezava
 Napaka
-Dkupna velikost
+Skupna velikost
 Prost prostor
 Velikost gruče
 Oznaka
@@ -247,14 +247,14 @@ Sistem ne more dodeliti potrebne količine pomnilnika
 Ni napak
 {0} izbranih predmetov
 Mape '{0}' ni mogoče ustvariti
-Posodabljanja za ta arhiv niso podprte.
+Posodabljanja za ta arhiv niso podprta.
 Datoteke '{0}' ni mogoče odpreti kot arhiv
 Šifriranega arhiva '{0}' ni mogoče odpreti. Napačno geslo?
 Nepodprta vrsta arhiva
 Datoteka {0} že obstaja
 Datoteka '{0}' je bila spremenjena.\nAli jo želite posodobiti v arhivu?
 Datoteke ni mogoče posodobiti\n'{0}'
-Ne morem zagnati urejevalnika.
+Ni mogoče zagnati urejevalnika.
 Datoteka izgleda kot virus (ime datoteke vsebuje dolge presledke v imenu).
 Operacije ni mogoče priklicati iz mape, ki ima dolgo pot.
 Izbrati morate eno datoteko
@@ -318,10 +318,10 @@ Napačno geslo?
 Nepodprta metoda stiskanja
 Napaka podatkov
 CRC ni uspel
-Podatki, ki niso na voljo
+Nedostopni podatki
 Nepričakovan konec podatkov
-Obstaja nekaj podatkov po koncu podatkov koristnega tovora
-Ni arhivsko
+Po koncu podatkov o obremenitvi je nekaj podatkov
+Ni arhiv
 Napaka v glavah
 Napačno geslo
 3763
@@ -491,5 +491,5 @@ Povezava do:
 Vrsta povezave
 Trdna povezava
 Datoteka simbolnih povezav
-Mapa simbolnnih povezav
+Mapa simbolnih povezav
 Združevanje map

@@ -1,5 +1,5 @@
 ﻿;!@Lang2@!UTF-8!
-; 15.14 : 02/01/2016 : Frans Liando
+; 20.00 : 2020-02-18 : Frans Leung
 ;
 ;
 ;
@@ -34,7 +34,7 @@ Mulai Ulang
 Latar Bela&kang
 Latar &Depan
 &Jeda
-Terjeda
+Dijeda
 Anda yakin ingin batal?
 500
 &Berkas
@@ -45,18 +45,18 @@ Pera&latan
 Ban&tuan
 540
 &Buka
-Buka Sisi &Dalam
-Buka Sisi L&uar
+Buka di &Dalam
+Buka di L&uar
 &Tampilkan
 &Edit
 &Nama Ulang
 &Salin Ke...
-P&indahkan Ke...
+P&indah Ke...
 &Hapus
 Be&lah Berkas...
 Gabun&g Berkas...
 P&roperti
-K&omentari
+K&omentar...
 Hitung ceksum
 Beda
 Buat Direktori
@@ -76,10 +76,10 @@ Batal Pilih Berdasarkan Tipe
 Ikon &Besar
 Ikon &Kecil
 &Daftar
-&Rincian
+D&etail
 730
-Tidak Berurutan
-Tampilan Datar
+Tidak Disortir
+Tampil Datar
 &2 Panel
 Bilah Ala&t
 Buka Akar Direktori
@@ -93,14 +93,14 @@ Bilah Ala&t Standar
 Tombol Besar
 Perlihatkan Teks Tombol
 800
-Tambah direktori ke Favorit sebagai
+&Tambah direktori ke Favorit sebagai
 Markah
 900
 &Pilihan...
-&Tolok Ukur
+Pa&tokan
 960
 Petun&juk...
-Mengen&ai 7-Zip...
+Tent&ang 7-Zip...
 1003
 Lintasan
 Nama
@@ -111,7 +111,7 @@ Ukuran dipak
 Atribut
 Dibuat
 Diakses
-Dimodifikasi
+Diubah
 Padat
 Dikomentari
 Dienkripsi
@@ -122,7 +122,7 @@ Kamus
 Tipe
 Anti
 Metode
-SO Host
+SO Hos
 Sistem Berkas
 Pengguna
 Grup
@@ -152,9 +152,9 @@ ID
 Nama Singkat
 Aplikasi Pembuat
 Ukuran Sektor
-Ragam
+Cara
 Tautan Simbolik
-Kesalahan
+Galat
 Ukuran Total
 Ruang Kosong
 Ukuran Gugus
@@ -168,9 +168,9 @@ Dihapus
 Apakah Pohon
 
 
-Tipe Kesalahan
-Kesalahan
-Kesalahan
+Tipe Galat
+Galat
+Galat
 Peringatan
 Peringatan
 Aliran
@@ -244,7 +244,7 @@ Mengenai 7-Zip
 7-Zip merupakan perangkat lunak gratis.\n\nTerjemahan oleh Frans Liando.
 3000
 Sistem tidak bisa mengalokasikan jumlah memori yang diperlukan
-Tidak ada kesalahan
+Tidak ada galat
 {0} objek terpilih
 Tidak bisa membuat Direktori '{0}'
 Operasi pembaruan tidaklah didukung untuk arsip ini.
@@ -252,13 +252,13 @@ Tidak bisa membuka berkas arsip '{0}'
 Tidak bisa membuka arsip terenkripsi '{0}'. Salah kata sandi?
 Tipe arsip tidak didukung
 Berkas {0} telah ada
-Berkas '{0}' telah termodifikasi.\nApakah Anda ingin perbarui berkas dalam arsip?
+Berkas '{0}' telah diubah.\nAnda ingin memperbarui berkas dalam arsip?
 Tidak bisa perbarui berkas\n'{0}'
 Tidak bisa memulai editor.
 Berkas ini tampaknya seperti virus (pada nama berkas berisi spasi yang panjang).
 Pengoperasian tidak bisa dipanggil dari direktori yang berlintasan panjang.
-Anda harus pilih satu berkas
-Anda harus pilih satu berkas atau lebih
+Anda harus memilih satu berkas
+Anda harus memilih satu berkas atau lebih
 Terlalu banyak butir
 Tidak bisa buka berkas sebagai arsip {0}
 Berkas dibuka sebagai arsip {0}
@@ -302,27 +302,27 @@ Pulihkan keamanan berkas
 3500
 Konfirmasi Penggantian Berkas
 Direktori tujuan telah berisi berkas yang terproses.
-Maukah Anda mengganti berkas yang ada
-dengan yang satu ini?
+Apakah Anda ingin mengganti berkas yang ada
+dengan yang ini?
 {0} bita
 Nama &Ulang Automatis
 3700
 Metode mampat untuk '{0}' tidak didukung.
-Kesalahan data di '{0}'. Berkas ini rusak.
+Galat data di '{0}'. Berkas ini rusak.
 CRC gagal di '{0}'. Berkas ini rusak.
-Kesalahan data di berkas terenkripsi '{0}'. Salah kata sandi?
+Galat data di berkas terenkripsi '{0}'. Salah kata sandi?
 CRC gagal di berkas terenkripsi '{0}'. Salah kata sandi?
 3710
 Salah kata sandi?
 3721
 Metode mampat tidak didukung
-Kesalahan data
+Galat data
 CRC gagal
 Data tidak tersedia
 Akhir data tidak terduga
 Terdapat suatu data setelah akhir muatan data
 Bukan arsip
-Kesalahan Tajuk
+Galat Tajuk
 Salah kata sandi
 3763
 Awal arsip belum tersedia
@@ -347,7 +347,7 @@ Jumlah ukuran:
 Kecepatan:
 Terproses:
 Rasio mampat:
-Kesalahan:
+Galat:
 Arsip:
 4000
 Tambah ke arsip
@@ -402,18 +402,18 @@ Memindah...
 Penamaan Ulang...
 Pilih direktori tujuan.
 Pengoperasian tidak didukung untuk direktori demikian.
-Kesalahan Penamaan Ulang Berkas atau Direktori
+Galat Penamaan Ulang Berkas atau Direktori
 Konfirmasi Salin Berkas
-Anda yakin ingin menyalin berkas ke arsip?
+Anda yakin ingin menyalin berkas ke arsip
 6100
-Konfirmasi Hapus Berkas
-Konfirmasi Hapus Direktori
-Konfirmasi Hapus Berkas-berkas
+Konfirmasikan Hapus Berkas
+Konfirmasikan Hapus Direktori
+Konfirmasikan Hapus Berkas-berkas
 Anda yakin ingin hapus '{0}'?
 Anda yakin ingin hapus direktori '{0}' dan semua isinya?
 Anda yakin ingin hapus {0} butir?
 Menghapus...
-Kesalahan Penghapusan Berkas atau Direktori
+Galat Penghapusan Berkas atau Direktori
 Sistem tidak bisa memindah suatu berkas yang berlintasan panjang ke Recycle Bin
 6300
 Buat Direktori
@@ -422,8 +422,8 @@ Nama Direktori:
 Nama berkas:
 Direktori Baru
 Berkas Baru
-Kesalahan Membuat Direktori
-Kesalahan Pembuatan Berkas
+Galat Membuat Direktori
+Galat Pembuatan Berkas
 6400
 Komentar
 &Komentari:
@@ -455,9 +455,9 @@ Belah ke &volume, bita:
 Membelah...
 Konfirmasi Membelah
 Anda yakin ingin membelah berkas menjadi {0} volume?
-Ukuran volume seharusnya lebih kecil dari pada ukuran asli berkas
+Ukuran volume harus lebih kecil dari ukuran asli berkas
 Ukuran volume salah
-Tentukan ukuran volume: {0} bita.\nAnda Yakin ingin membelah arsip menjadi volume demikian?
+Ukuran volume yang ditentukan: {0} bita.\nAnda Yakin ingin membelah arsip menjadi volume demikian?
 7400
 Gabung Berkas
 &Gabung ke:
@@ -471,17 +471,17 @@ Informasi ceksum
 Ceksum CRC untuk data:
 Ceksum CRC untuk data dan nama:
 7600
-Tolok Ukur
+Patokan
 Pemakaian memori:
 Pemampatan
 Pengawamampatan
 Penilaian
 Jumlah Penilaian
-Sekarang
-Hasil
+Aktual
+Perolehan
 Pemakaian CPU
 Penilaian/Pemakaian
-Lulus:
+Pas:
 7700
 Tautan
 Tautan

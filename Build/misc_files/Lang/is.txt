@@ -1,5 +1,5 @@
 ;!@Lang2@!UTF-8!
-; 18.06 : 2019-01-24 : Stefán Örvar Sigmundsson
+; 19.02 : 2019-11-12 : Stefán Örvar Sigmundsson
 ;
 ;
 ;
@@ -39,54 +39,54 @@ Ert þú viss um að þú viljir hætta við?
 500
 &Skrá
 &Breyta
-S&koða
+&Skoða
 &Uppáhald
 &Verkfæri
 &Hjálp
 540
 &Opna
-Opna að &innanverðu
-Opna að &utanverðu
-S&koða
+&Opna að innanverðu
+&Opna að utanverðu
+&Skoða
 &Breyta
 &Endurnefna
 &Afrita í...
 &Færa í...
-E&yða
-K&ljúfa skrá...
-S&ameina skrár...
-E&iginleikar
+&Eyða
+&Kljúfa skrá...
+&Sameina skrár...
+&Eiginleikar
 &Gera athugasemd...
 Reikna samtölu
 Mismunur
-Skapa &möppu
-Skapa &skrá
+Skapa möppu
+Skapa skrá
 &Hætta
-&Tengill
+Tengill
 &Víxlstraumar
 600
 &Velja allt
 &Afvelja allt
 &Umsnúa vali
-&Velja...
-&Afvelja...
-&Velja eftir tegund
-&Afvelja eftir tegund
+Velja...
+Afvelja...
+Velja eftir tegund
+Afvelja eftir tegund
 700
 &Stórar táknmyndir
-S&máar táknmyndir
+&Smáar táknmyndir
 &Listi
-Sm&áatriði
+&Smáatriði
 730
 Óflokkað
-&Flatsýn
+Flatsýn
 &2 spjöld
 &Verkfærastikur
-&Opna rótarmöppu
-&Upp um eitt stig
-M&öppusaga...
+Opna rótarmöppu
+Upp um eitt stig
+Möppusaga...
 &Endurglæða
-S&jálfendurglæðun
+Sjálfendurglæðun
 750
 Safnverkfærastika
 Stöðluð verkfærastika
@@ -205,10 +205,10 @@ Kerfi
 Tengja 7-Zip við:
 Allir notendur
 2301
-&Innleiða 7-Zip í samhengisvalmynd skeljar
-&Þrepaskipt samhengisvalmynd
+Innleiða 7-Zip í samhengisvalmynd skeljar
+Þrepaskipt samhengisvalmynd
 Samhengisvalmyndaratriði:
-&Táknmyndir í samhengisvalmynd
+Táknmyndir í samhengisvalmynd
 2320
 <Mappa>
 <Safn>
@@ -223,22 +223,22 @@ Bæta við í „{0}“
 Þjappa í „{0}“ og senda í rafpósti
 2400
 Möppur
-Vinnslumappa
+&Vinnslumappa
 &Tímabundin mappa kerfis
 &Núverandi
-Til&greind:
-N&ota einungis fyrir fjarlægjanleg drif
+&Tilgreind:
+Nota einungis fyrir fjarlægjanleg drif
 Tilgreina staðsetningu fyrir tímabundnar safnskrár.
 2500
 Stillingar
-Sýna „..“ &atriði
-Sýna &raunverulegar skráartáknmyndir
-Sýna &kerfisvalmynd
+Sýna „..“ atriði
+Sýna raunverulegar skráartáknmyndir
+Sýna kerfisvalmynd
 &Heildarraðaval
-Sýna &töflulínur
-&Einsmella til að opna atriði
-Annars konar &valhamur
-Nota stórar &minnissíður
+&Sýna grindarlínur
+Einsmella til að opna atriði
+&Annars konar valhamur
+&Nota stórar minnissíður
 2900
 Um 7-Zip
 7-Zip er frjáls hugbúnaður
@@ -281,8 +281,8 @@ Eyðandi
 Skapandi höfuð
 3400
 Afþjappa
-Afþjappa í:
-Tilgreindu staðsetningu fyrir afþjöppuðu skrárnar.
+&Afþjappa í:
+Tilgreindu staðsetningu fyrir útdregnu skrárnar.
 3410
 Slóðarhamur:
 Full slóðarnöfn
@@ -332,10 +332,10 @@ Rangt aðgangsorð
 
 Óstuddur eiginleiki
 3800
-Ritaðu aðgangsorðið
-Ritaðu aðgangsorðið:
-Endurritaðu aðgangsorðið:
-Sýna aðgangsorðið
+Innsláðu aðgangsorðið
+Innsláðu aðgangsorðið:
+Endurinnsláðu aðgangsorðið:
+&Sýna aðgangsorðið
 Aðgangsorðin samsvarast ekki
 Notaðu einungis enska stafi, tölur og sérstök rittákn (!, #, $, ...) í aðgangsorðunum
 Aðgangsorðið er of langt
@@ -351,22 +351,22 @@ Villur:
 Söfn:
 4000
 Bæta við safni
-Safn:
-Uppfærsluhamur:
-Safnsnið:
-Þjöppunarsnið:
-Þjöppunaraðferð:
-Orðasafnsstærð:
-Orðastærð:
+&Safn:
+&Uppfærsluhamur:
+&Safnsnið:
+&Þjöppunarsnið:
+&Þjöppunaraðferð:
+&Orðasafnsstærð:
+&Orðastærð:
 Þéttbálkstærð:
 Fjöldi gjörvaþráða:
-Færibreytur:
+&Færibreytur:
 Valmöguleikar
-Skapa SFX-safn
+&Skapa SFX-safn
 Þjappa sameiginlegum skrám
 Dulkóðun
 Dulkóðunaraðferð:
-Dulkóða skráarnöfn
+&Dulkóða skráarnöfn
 Minnisnotkun fyrir þjöppun:
 Minnisnotkun fyrir afþjöppun:
 Eyða skrám eftir þjöppun
@@ -414,7 +414,7 @@ Ert þú viss um að þú viljir eyða möppunni „{0}“ og öllu innihaldinu 
 Ert þú viss um að þú viljir eyða þessum {0} atriðum?
 Eyðandi...
 Villa við eyðingu skráar eða möppu
-Kerfið getur ekki fært skrá með langri slóð í Recycle Bin
+Kerfið getur ekki fært skrá með langri slóð í Endurvinnslutunnu
 6300
 Skapa möppu
 Skapa skrá
@@ -426,7 +426,7 @@ Villa við sköpun möppunnar
 Villa við sköpun skráarinnar
 6400
 Athugasemd
-Athugasemd:
+&Athugasemd:
 Velja
 Afvelja
 Mát:
@@ -450,8 +450,8 @@ Eyða
 Upplýsingar
 7300
 Kljúfa skrá
-Kljúfa í:
-Kljúfa í bindi, bæti:
+&Kljúfa í:
+&Kljúfa í bindi, bæti:
 Kljúfandi...
 Staðfesta klofning
 Ert þú viss um að þú viljir kjúfa skrána í {0} bindi?
@@ -460,7 +460,7 @@ Röng bindisstærð
 Tilgreindu bindisstærð: {0} bæti.\nErt þú viss um að þú viljir kljúfa safnið í slík bindi?
 7400
 Sameina skrár
-Sameina í:
+&Sameina í:
 Sameinandi...
 Veldu einungis fyrsta hlutann af klofningsskránni
 Get ekki greint skrána sem hluta af klofningsskránni
@@ -475,12 +475,12 @@ Afkastapróf
 Minnisnotkun:
 Þjappandi
 Afþjappandi
-Niðurstaða
-Heildarniðurstaða
+Mat
+Heildarmat
 Núverandi
 Útkoma
 Gjörvanotkun
-Niðurstaða / Notkun
+Mat / Notkun
 Yfirferðir:
 7700
 Tengill

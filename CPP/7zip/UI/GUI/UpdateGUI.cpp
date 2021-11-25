@@ -56,9 +56,9 @@ HRESULT CThreadUpdating::ProcessVirt()
       ei, UpdateCallbackGUI, UpdateCallbackGUI, needSetPath);
   FinalMessage.ErrorMessage.Message = ei.Message.Ptr();
   ErrorPaths = ei.FileNames;
-  if (ei.SystemError != S_OK && ei.SystemError != E_FAIL && ei.SystemError != E_ABORT)
-    return ei.SystemError;
-  return res;
+  if (res != S_OK)
+    return res;
+  return HRESULT_FROM_WIN32(ei.SystemError);
 }
 
 static void AddProp(CObjectVector<CProperty> &properties, const char *name, const UString &value)
@@ -142,11 +142,12 @@ static void SetOutProperties(
     UInt32 level,
     bool setMethod,
     const UString &method,
-    UInt32 dictionary,
+    UInt64 dict64,
     bool orderMode,
     UInt32 order,
     bool solidIsSpecified, UInt64 solidBlockSize,
-    bool multiThreadIsAllowed, UInt32 numThreads,
+    // bool multiThreadIsAllowed,
+    UInt32 numThreads,
     const UString &encryptionMethod,
     bool encryptHeadersIsAllowed, bool encryptHeaders,
     bool /* sfxMode */)
@@ -157,13 +158,13 @@ static void SetOutProperties(
   {
     if (!method.IsEmpty())
       AddProp(properties, is7z ? "0": "m", method);
-    if (dictionary != (UInt32)(Int32)-1)
+    if (dict64 != (UInt64)(Int64)-1)
     {
       AString name;
       if (is7z)
         name = "0";
       name += (orderMode ? "mem" : "d");
-      AddProp(properties, name, GetNumInBytesString(dictionary));
+      AddProp(properties, name, GetNumInBytesString(dict64));
     }
     if (order != (UInt32)(Int32)-1)
     {
@@ -182,7 +183,9 @@ static void SetOutProperties(
     AddProp(properties, "he", encryptHeaders);
   if (solidIsSpecified)
     AddProp(properties, "s", GetNumInBytesString(solidBlockSize));
-  if (multiThreadIsAllowed)
+  if (
+      // multiThreadIsAllowed &&
+      numThreads != (UInt32)(Int32)-1)
     AddProp(properties, "mt", numThreads);
 }
 
@@ -287,6 +290,11 @@ static HRESULT ShowDialog(
   CCompressDialog dialog;
   NCompressDialog::CInfo &di = dialog.Info;
   dialog.ArcFormats = &codecs->Formats;
+  {
+    CObjectVector<CCodecInfoUser> userCodecs;
+    codecs->Get_CodecsInfoUser_Vector(userCodecs);
+    dialog.SetMethods(userCodecs);
+  }
 
   if (options.MethodMode.Type_Defined)
     di.FormatIndex = options.MethodMode.Type.FormatIndex;
@@ -299,9 +307,13 @@ static HRESULT ShowDialog(
     if (!oneFile && ai.Flags_KeepName())
       continue;
     if ((int)i != di.FormatIndex)
+    {
+      if (ai.Flags_HashHandler())
+        continue;
       if (ai.Name.IsEqualTo_Ascii_NoCase("swfc"))
         if (!oneFile || name.Len() < 4 || !StringsAreEqualNoCase_Ascii(name.RightPtr(4), ".swf"))
           continue;
+    }
     dialog.ArcIndices.Add(i);
   }
   if (dialog.ArcIndices.IsEmpty())
@@ -389,10 +401,11 @@ static HRESULT ShowDialog(
       di.Level,
       !methodOverride,
       di.Method,
-      di.Dictionary,
+      di.Dict64,
       di.OrderMode, di.Order,
       di.SolidIsSpecified, di.SolidBlockSize,
-      di.MultiThreadIsAllowed, di.NumThreads,
+      // di.MultiThreadIsAllowed,
+      di.NumThreads,
       di.EncryptionMethod,
       di.EncryptHeadersIsAllowed, di.EncryptHeaders,
       di.SFXMode);
@@ -464,6 +477,13 @@ HRESULT UpdateGUI(
   tu.UpdateCallbackGUI->Init();
 
   UString title = LangString(IDS_PROGRESS_COMPRESSING);
+  if (!formatIndices.IsEmpty())
+  {
+    const int fin = formatIndices[0].FormatIndex;
+    if (fin >= 0)
+      if (codecs->Formats[fin].Flags_HashHandler())
+        title = LangString(IDS_CHECKSUM_CALCULATING);
+  }
 
   /*
   if (hwndParent != 0)
