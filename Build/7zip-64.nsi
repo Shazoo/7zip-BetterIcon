@@ -4,7 +4,7 @@
 !define WIN64
 
 !define VERSION_MAJOR 21
-!define VERSION_MINOR 04
+!define VERSION_MINOR 06
 !define VERSION_POSTFIX_FULL ""
 !ifdef WIN64
 !ifdef IA64
