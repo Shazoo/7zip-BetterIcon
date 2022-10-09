@@ -3,8 +3,8 @@
 
 !define WIN64
 
-!define VERSION_MAJOR 21
-!define VERSION_MINOR 06
+!define VERSION_MAJOR 22
+!define VERSION_MINOR 01
 !define VERSION_POSTFIX_FULL ""
 !ifdef WIN64
 !ifdef IA64
@@ -182,7 +182,7 @@ Section
   File ..\CPP\7zip\UI\Console\x64\7z.exe
   File ..\CPP\7zip\Bundles\SFXWin\x64\7z.sfx
   File ..\CPP\7zip\Bundles\SFXCon\x64\7zCon.sfx
-  File /oname=7-zip32.dll ..\CPP\7zip\UI\Explorer\x86\7-zip.dll 
+  File /oname=7-zip32.dll ..\CPP\7zip\UI\Explorer\x64\7-zip.dll 
 
   
   SetOutPath $INSTDIR\Lang

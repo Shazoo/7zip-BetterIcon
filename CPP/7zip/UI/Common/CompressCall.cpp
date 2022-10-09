@@ -33,12 +33,16 @@ using namespace NWindows;
 
 #define k7zGui  "7zG.exe"
 
+// 21.07 : we can disable wildcard
+// #define ISWITCH_NO_WILDCARD_POSTFIX "w-"
+#define ISWITCH_NO_WILDCARD_POSTFIX
+
 #define kShowDialogSwitch  " -ad"
 #define kEmailSwitch  " -seml."
-#define kIncludeSwitch  " -i"
 #define kArchiveTypeSwitch  " -t"
-#define kArcIncludeSwitches  " -an -ai"
-#define kHashIncludeSwitches  " -i"
+#define kIncludeSwitch  " -i" ISWITCH_NO_WILDCARD_POSTFIX
+#define kArcIncludeSwitches  " -an -ai" ISWITCH_NO_WILDCARD_POSTFIX
+#define kHashIncludeSwitches  kIncludeSwitch
 #define kStopSwitchParsing  " --"
 
 extern HWND g_HWND;
@@ -248,7 +252,7 @@ static void ExtractGroupCommand(const UStringVector &arcPaths, UString &params, 
     ErrorMessageHRESULT(result);
 }
 
-void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bool showDialog, bool elimDup)
+void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bool showDialog, bool elimDup, UInt32 writeZone)
 {
   MY_TRY_BEGIN
   UString params ('x');
@@ -259,6 +263,11 @@ void ExtractArchives(const UStringVector &arcPaths, const UString &outFolder, bo
   }
   if (elimDup)
     params += " -spe";
+  if (writeZone != (UInt32)(Int32)-1)
+  {
+    params += " -snz";
+    params.Add_UInt32(writeZone);
+  }
   if (showDialog)
     params += kShowDialogSwitch;
   ExtractGroupCommand(arcPaths, params, false);

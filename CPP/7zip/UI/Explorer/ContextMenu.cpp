@@ -102,6 +102,7 @@ CZipContextMenu::CZipContextMenu():
    _isMenuForFM(false),
    _dropMode(false),
    _bitmap(NULL),
+   _writeZone((UInt32)(Int32)-1),
    IsSeparator(false),
    IsRoot(true),
    CurrentSubCommand(0)
@@ -560,6 +561,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
   ci.Load();
 
   _elimDup = ci.ElimDup;
+  _writeZone = ci.WriteZone;
 
   HBITMAP bitmap = NULL;
   if (ci.MenuIcons.Val)
@@ -947,7 +949,7 @@ STDMETHODIMP CZipContextMenu::QueryContextMenu(HMENU hMenu, UINT indexMenu,
           else
             name = fs2us(fi0.Name);
           name += ".sha256";
-          cmi.Folder= folderPrefix;
+          cmi.Folder = fs2us(folderPrefix);
           cmi.ArcName = name;
           s = "SHA-256 -> ";
           s += name;
@@ -1167,7 +1169,8 @@ HRESULT CZipContextMenu::InvokeCommandCommon(const CCommandMapItem &cmi)
       {
         ExtractArchives(_fileNames, cmi.Folder,
             (cmdID == kExtract), // showDialog
-            (cmdID == kExtractTo) && _elimDup.Val // elimDup
+            (cmdID == kExtractTo) && _elimDup.Val, // elimDup
+            _writeZone
             );
         break;
       }

@@ -120,6 +120,15 @@ static void SetMethodProp32(CMethodProps &m, PROPID propID, UInt32 value)
     m.AddProp32(propID, value);
 }
 
+void CMultiMethodProps::SetGlobalLevelTo(COneMethodInfo &oneMethodInfo) const
+{
+  UInt32 level = _level;
+  if (level != (UInt32)(Int32)-1)
+    SetMethodProp32(oneMethodInfo, NCoderPropID::kLevel, (UInt32)level);
+}
+
+#ifndef _7ZIP_ST
+
 static void SetMethodProp32_Replace(CMethodProps &m, PROPID propID, UInt32 value)
 {
   const int i = m.FindProp(propID);
@@ -132,14 +141,6 @@ static void SetMethodProp32_Replace(CMethodProps &m, PROPID propID, UInt32 value
   m.AddProp32(propID, value);
 }
 
-void CMultiMethodProps::SetGlobalLevelTo(COneMethodInfo &oneMethodInfo) const
-{
-  UInt32 level = _level;
-  if (level != (UInt32)(Int32)-1)
-    SetMethodProp32(oneMethodInfo, NCoderPropID::kLevel, (UInt32)level);
-}
-
-#ifndef _7ZIP_ST
 void CMultiMethodProps::SetMethodThreadsTo_IfNotFinded(CMethodProps &oneMethodInfo, UInt32 numThreads)
 {
   SetMethodProp32(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
@@ -149,7 +150,9 @@ void CMultiMethodProps::SetMethodThreadsTo_Replace(CMethodProps &oneMethodInfo, 
 {
   SetMethodProp32_Replace(oneMethodInfo, NCoderPropID::kNumThreads, numThreads);
 }
-#endif
+
+#endif // _7ZIP_ST
+
 
 void CMultiMethodProps::InitMulti()
 {
@@ -237,39 +240,72 @@ void CSingleMethodProps::Init()
 }
 
 
+HRESULT CSingleMethodProps::SetProperty(const wchar_t *name2, const PROPVARIANT &value)
+{
+  // processed = false;
+  UString name = name2;
+  name.MakeLower_Ascii();
+  if (name.IsEmpty())
+    return E_INVALIDARG;
+  if (name.IsPrefixedBy_Ascii_NoCase("x"))
+  {
+    UInt32 a = 9;
+    RINOK(ParsePropToUInt32(name.Ptr(1), value, a));
+    _level = a;
+    AddProp_Level(a);
+    // processed = true;
+    return S_OK;
+  }
+  {
+    HRESULT hres;
+    if (SetCommonProperty(name, value, hres))
+    {
+      // processed = true;
+      return S_OK;
+    }
+  }
+  RINOK(ParseMethodFromPROPVARIANT(name, value));
+  return S_OK;
+}
+
+
 HRESULT CSingleMethodProps::SetProperties(const wchar_t * const *names, const PROPVARIANT *values, UInt32 numProps)
 {
   Init();
   
   for (UInt32 i = 0; i < numProps; i++)
   {
-    UString name = names[i];
-    name.MakeLower_Ascii();
-    if (name.IsEmpty())
-      return E_INVALIDARG;
-    const PROPVARIANT &value = values[i];
-    if (name[0] == L'x')
-    {
-      UInt32 a = 9;
-      RINOK(ParsePropToUInt32(name.Ptr(1), value, a));
-      _level = a;
-      AddProp_Level(a);
-      continue;
-    }
-    {
-      HRESULT hres;
-      if (SetCommonProperty(name, value, hres))
-      {
-        RINOK(hres)
-        continue;
-      }
-    }
-    RINOK(ParseMethodFromPROPVARIANT(names[i], value));
+    RINOK(SetProperty(names[i], values[i]));
   }
 
   return S_OK;
 }
 
 #endif
+
+
+static HRESULT PROPVARIANT_to_BoolPair(const PROPVARIANT &prop, CBoolPair &dest)
+{
+  RINOK(PROPVARIANT_to_bool(prop, dest.Val));
+  dest.Def = true;
+  return S_OK;
+}
+
+HRESULT CHandlerTimeOptions::Parse(const UString &name, const PROPVARIANT &prop, bool &processed)
+{
+  processed = true;
+  if (name.IsEqualTo_Ascii_NoCase("tm")) { return PROPVARIANT_to_BoolPair(prop, Write_MTime); }
+  if (name.IsEqualTo_Ascii_NoCase("ta")) { return PROPVARIANT_to_BoolPair(prop, Write_ATime); }
+  if (name.IsEqualTo_Ascii_NoCase("tc")) { return PROPVARIANT_to_BoolPair(prop, Write_CTime); }
+  if (name.IsPrefixedBy_Ascii_NoCase("tp"))
+  {
+    UInt32 v = 0;
+    RINOK(ParsePropToUInt32(name.Ptr(2), prop, v));
+    Prec = v;
+    return S_OK;
+  }
+  processed = false;
+  return S_OK;
+}
 
 }
