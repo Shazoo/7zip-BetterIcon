@@ -1,7 +1,17 @@
 # 7zip-BetterIcon
+
+
+！！！本项目全面改为AI自动话跟踪完成 ！！！
+
+
+
+-----------------------------------
+
+
+
 7Zip Windows Client (https://www.7-zip.org ) , re-build with better icons. 
 
-![Better icons](https://img.0w0.io/u/s!AkNcBZ_PlzzpgrBYxPV1-fncwF6y5g/7zip-beautiful-icons.png)
+
 
 当前基于 **7-Zip 26.03**（x64）。历次版本见 git tags（v19.00 / v21.04 / v22.01 / v24.08）。
 
