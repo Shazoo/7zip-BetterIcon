@@ -211,11 +211,13 @@ static const EMethodID g_ZstdMethods[] =
 };
 */
 
+/*
 static const EMethodID g_SwfcMethods[] =
 {
   kDeflate
   // kLZMA
 };
+*/
 
 static const EMethodID g_TarMethods[] =
 {
@@ -278,7 +280,8 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "7z",
-    (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    // (1 << 0) | (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    (1 << 10) - 1,
     METHODS_PAIR(g_7zMethods),
     kFF_Filter | kFF_Solid | kFF_MultiThread | kFF_Encrypt |
     kFF_EncryptFileNames | kFF_MemUse | kFF_SFX
@@ -306,7 +309,8 @@ static const CFormatInfo g_Formats[] =
   },
   {
     "xz",
-    (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    // (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
+    (1 << 10) - 1 - (1 << 0), // store (1 << 0) is not supported
     METHODS_PAIR(g_XzMethods),
     kFF_Solid | kFF_MultiThread | kFF_MemUse
   },
@@ -321,12 +325,14 @@ static const CFormatInfo g_Formats[] =
     | kFF_MemUse
   },
   */
+/*
   {
     "Swfc",
     (1 << 1) | (1 << 3) | (1 << 5) | (1 << 7) | (1 << 9),
     METHODS_PAIR(g_SwfcMethods),
     0
   },
+*/
   {
     "Tar",
     (1 << 0),
@@ -429,22 +435,23 @@ bool CCompressDialog::OnInit()
   #endif
 
   {
-    UInt64 size = (UInt64)(sizeof(size_t)) << 29;
+    size_t size = (size_t)sizeof(size_t) << 29;
     _ramSize_Defined = NSystem::GetRamSize(size);
     // size = (UInt64)3 << 62; // for debug only;
-    _ramSize = size;
-    const UInt64 kMinUseSize = (1 << 26);
-    if (size < kMinUseSize)
-      size = kMinUseSize;
-
-    unsigned bits = sizeof(size_t) * 8;
-    if (bits == 32)
     {
-      const UInt32 limit2 = (UInt32)7 << 28;
-      if (size > limit2)
-        size = limit2;
+      // we use reduced limit for 32-bit version:
+      unsigned bits = sizeof(size_t) * 8;
+      if (bits == 32)
+      {
+        const UInt32 limit2 = (UInt32)7 << 28;
+        if (size > limit2)
+            size = limit2;
+      }
     }
-
+    _ramSize = size;
+    const size_t kMinUseSize = 1 << 26;
+    if (size < kMinUseSize)
+        size = kMinUseSize;
     _ramSize_Reduced = size;
 
     // 80% - is auto usage limit in handlers
@@ -499,8 +506,7 @@ bool CCompressDialog::OnInit()
     {
       const unsigned arcIndex = ArcIndices[i];
       const CArcInfoEx &ai = (*ArcFormats)[arcIndex];
-      const int index = (int)m_Format.AddString(ai.Name);
-      m_Format.SetItemData(index, (LPARAM)arcIndex);
+      const int index = (int)m_Format.AddString_SetItemData(ai.Name, (LPARAM)arcIndex);
       if (!needSetMain)
       {
         if (Info.FormatIndex == (int)arcIndex)
@@ -532,11 +538,6 @@ bool CCompressDialog::OnInit()
 
   AddComboItems(m_PathMode, k_PathMode_IDs, Z7_ARRAY_SIZE(k_PathMode_IDs),
       k_PathMode_Vals, Info.PathMode);
-
-
-  TCHAR s[32] = { TEXT('/'), TEXT(' '), 0 };
-  ConvertUInt32ToString(NSystem::GetNumberOfProcessors(), s + 2);
-  SetItemText(IDT_COMPRESS_HARDWARE_THREADS, s);
 
   CheckButton(IDX_COMPRESS_SHARED, Info.OpenShareForWrite);
   CheckButton(IDX_COMPRESS_DEL, Info.DeleteAfterCompressing);
@@ -646,7 +647,19 @@ void CCompressDialog::EnableMultiCombo(unsigned id)
   EnableItem(id, enable);
 }
 
-static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s);
+static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s)
+{
+  return cb.AddString((CSysString)s);
+}
+
+static LRESULT ComboBox_AddStringAscii_SetItemData(NControl::CComboBox &cb,
+    const char *s, LPARAM lParam)
+{
+  const LRESULT index = ComboBox_AddStringAscii(cb, s);
+  if (index >= 0) // optional check
+    cb.SetItemData((int)index, lParam);
+  return index;
+}
 
 static void Combine_Two_BoolPairs(const CBoolPair &b1, const CBoolPair &b2, CBool1 &res)
 {
@@ -1580,35 +1593,31 @@ void CCompressDialog::SetLevel2()
 
   for (unsigned i = 0; i < sizeof(UInt32) * 8; i++)
   {
-    const UInt32 mask = (UInt32)1 << i;
-    if ((fi.LevelsMask & mask) != 0)
+    const UInt32 mask = fi.LevelsMask >> i;
+    // if (mask == 0) break;
+    if (mask & 1)
     {
-      const UInt32 langID = g_Levels[i];
       UString s;
       s.Add_UInt32(i);
-      // if (fi.LevelsMask < (1 << (MY_ZSTD_LEVEL_MAX + 1)) - 1)
-      if (langID)
-      if (i != 0 || !isZstd)
+      if (i < Z7_ARRAY_SIZE(g_Levels))
       {
-        s += " - ";
-        s += LangString(langID);
+        const UInt32 langID = g_Levels[i];
+        // if (fi.LevelsMask < (1 << (MY_ZSTD_LEVEL_MAX + 1)) - 1)
+        if (langID)
+          if (i != 0 || !isZstd)
+          {
+            s += " - ";
+            AddLangString(s, langID);
+          }
       }
-      const int index = (int)m_Level.AddString(s);
-      m_Level.SetItemData(index, (LPARAM)i);
+      m_Level.AddString_SetItemData(s, (LPARAM)i);
     }
-    if (fi.LevelsMask <= mask)
-      break;
   }
   SetNearestSelectComboBox(m_Level, level);
 }
 
 
-static LRESULT ComboBox_AddStringAscii(NControl::CComboBox &cb, const char *s)
-{
-  return cb.AddString((CSysString)s);
-}
-
-static const char *k_Auto_Prefix = "*  ";
+static const char * const k_Auto_Prefix = "*  ";
 
 static void Modify_Auto(AString &s)
 {
@@ -1681,8 +1690,8 @@ void CCompressDialog::SetMethod2(int keepMethodId)
       writtenMethodId = -1;
       Modify_Auto(s);
     }
-    const int itemIndex = (int)ComboBox_AddStringAscii(m_Method, s);
-    m_Method.SetItemData(itemIndex, writtenMethodId);
+    const int itemIndex = (int)ComboBox_AddStringAscii_SetItemData(m_Method,
+          s, writtenMethodId);
     if (keepMethodId == methodID)
     {
       m_Method.SetCurSel(itemIndex);
@@ -1722,7 +1731,7 @@ void CCompressDialog::SetEncryptionMethod()
   }
   else if (ai.Is_Zip())
   {
-    int index = FindRegistryFormat(ai.Name);
+    const int index = FindRegistryFormat(ai.Name);
     UString encryptionMethod;
     if (index >= 0)
     {
@@ -1827,9 +1836,7 @@ static int Combo_AddDict2(NWindows::NControl::CComboBox &cb, size_t sizeReal, si
   s.Add_Char('B');
   if (sizeReal == k_Auto_Dict)
     Modify_Auto(s);
-  const int index = (int)ComboBox_AddStringAscii(cb, s);
-  cb.SetItemData(index, (LPARAM)sizeReal);
-  return index;
+  return (int)ComboBox_AddStringAscii_SetItemData(cb, s, (LPARAM)sizeReal);
 }
 
 int CCompressDialog::AddDict2(size_t sizeReal, size_t sizeShow)
@@ -1931,11 +1938,11 @@ void CCompressDialog::SetDictionary2()
     case kLZMA2:
     {
       {
-        _auto_Dict =
-            ( level <= 3 ? ((UInt32)1 << (level * 2 + 16)) :
-            ( level <= 6 ? ((UInt32)1 << (level + 19)) :
-            ( level <= 7 ? ((UInt32)1 << 25) : ((UInt32)1 << 26)
-            )));
+        _auto_Dict = level <= 4 ?
+            (UInt32)1 << (level * 2 + 16) :
+            level <= sizeof(size_t) / 2 + 4 ?
+              (UInt32)1 << (level + 20) :
+              (UInt32)1 << (sizeof(size_t) / 2 + 24);
       }
 
       // we use threshold 3.75 GiB to switch to kLzmaMaxDictSize.
@@ -2192,9 +2199,7 @@ int CCompressDialog::AddOrder(UInt32 size)
 {
   char s[32];
   ConvertUInt32ToString(size, s);
-  const int index = (int)ComboBox_AddStringAscii(m_Order, s);
-  m_Order.SetItemData(index, (LPARAM)size);
-  return index;
+  return (int)ComboBox_AddStringAscii_SetItemData(m_Order, s, (LPARAM)size);
 }
 
 int CCompressDialog::AddOrder_Auto()
@@ -2202,9 +2207,7 @@ int CCompressDialog::AddOrder_Auto()
   AString s;
   s.Add_UInt32(_auto_Order);
   Modify_Auto(s);
-  int index = (int)ComboBox_AddStringAscii(m_Order, s);
-  m_Order.SetItemData(index, (LPARAM)(INT_PTR)(-1));
-  return index;
+  return (int)ComboBox_AddStringAscii_SetItemData(m_Order, s, (LPARAM)(INT_PTR)(-1));
 }
 
 void CCompressDialog::SetOrder2()
@@ -2481,9 +2484,7 @@ void CCompressDialog::SetSolidBlockSize2()
     AString s;
     Add_Size(s, _auto_Solid);
     Modify_Auto(s);
-    const int index = (int)ComboBox_AddStringAscii(m_Solid, s);
-    m_Solid.SetItemData(index, (LPARAM)(UInt32)(Int32)-1);
-    curSel = index;
+    curSel = (int)ComboBox_AddStringAscii_SetItemData(m_Solid, s, (LPARAM)(UInt32)(Int32)-1);
   }
 
   if (is7z)
@@ -2492,8 +2493,7 @@ void CCompressDialog::SetSolidBlockSize2()
     // kSolidLog_NoSolid = 0 for xz means default blockSize
     if (is7z)
       LangString(IDS_COMPRESS_NON_SOLID, s);
-    const int index = (int)m_Solid.AddString(s);
-    m_Solid.SetItemData(index, (LPARAM)(UInt32)kSolidLog_NoSolid);
+    const int index = (int)m_Solid.AddString_SetItemData(s, (LPARAM)(UInt32)kSolidLog_NoSolid);
     if (defaultBlockSize == kSolidLog_NoSolid)
       curSel = index;
   }
@@ -2502,16 +2502,15 @@ void CCompressDialog::SetSolidBlockSize2()
   {
     AString s;
     Add_Size(s, (UInt64)1 << i);
-    const int index = (int)ComboBox_AddStringAscii(m_Solid, s);
-    m_Solid.SetItemData(index, (LPARAM)(UInt32)i);
+    const int index = (int)ComboBox_AddStringAscii_SetItemData(m_Solid, s, (LPARAM)(UInt32)i);
     if (defaultBlockSize != (UInt32)(Int32)-1)
       if (i <= defaultBlockSize || index <= 1)
         curSel = index;
   }
   
   {
-    const int index = (int)m_Solid.AddString(LangString(IDS_COMPRESS_SOLID));
-    m_Solid.SetItemData(index, (LPARAM)kSolidLog_FullSolid);
+    const int index = (int)m_Solid.AddString_SetItemData(
+        LangString(IDS_COMPRESS_SOLID), (LPARAM)kSolidLog_FullSolid);
     if (defaultBlockSize == kSolidLog_FullSolid)
       curSel = index;
   }
@@ -2555,7 +2554,7 @@ static bool Is_Zstd_Mt_Supported()
 }
 */
 
-static const char *k_ST_Threads = " (ST)";
+static const char * const k_ST_Threads = " (ST)";
 
 void CCompressDialog::SetNumThreads2()
 {
@@ -2566,15 +2565,31 @@ void CCompressDialog::SetNumThreads2()
   if (!fi.MultiThread_())
     return;
 
-  const UInt32 numHardwareThreads = NSystem::GetNumberOfProcessors();
-    // 64; // for debug:
+  UInt32 numCPUs = 1;            // process threads
+  UInt32 numHardwareThreads = 1; // system threads
+  NSystem::CProcessAffinity threadsInfo;
+  threadsInfo.InitST();
+#ifndef Z7_ST
+  threadsInfo.Get_and_return_NumProcessThreads_and_SysThreads(numCPUs, numHardwareThreads);
+#endif
 
-  UInt32 defaultValue = numHardwareThreads;
+  AString s ("/ ");
+  {
+    s.Add_UInt32(numCPUs);
+    if (numCPUs != numHardwareThreads)
+    {
+      s += " / ";
+      s.Add_UInt32(numHardwareThreads);
+    }
+    SetItemTextA(IDT_COMPRESS_HARDWARE_THREADS, s.Ptr());
+  }
+
+  UInt32 defaultValue = numCPUs;
   bool useAutoThreads = true;
 
   {
     const CArcInfoEx &ai = Get_ArcInfoEx();
-    int index = FindRegistryFormat(ai.Name);
+    const int index = FindRegistryFormat(ai.Name);
     if (index >= 0)
     {
       const NCompression::CFormatOptions &fo = m_RegistryInfo.Formats[index];
@@ -2588,14 +2603,20 @@ void CCompressDialog::SetNumThreads2()
 
   // const UInt32 num_ZSTD_threads_MAX = Is_Zstd_Mt_Supported() ? MY_ZSTDMT_NBWORKERS_MAX : 0;
 
-  UInt32 numAlgoThreadsMax = numHardwareThreads * 2;
   const int methodID = GetMethodID();
+  const bool isZip = IsZipFormat();
 
-  switch (methodID)
+  UInt32 numAlgoThreadsMax = numHardwareThreads * 2; // for unknow methods
+  if (isZip)
+    numAlgoThreadsMax =
+        8 << (sizeof(size_t) / 2); // 32 threads for 32-bit : 128 threads for 64-bit
+  else if (IsXzFormat())
+    numAlgoThreadsMax = 256 * 2; // MTCODER_THREADS_MAX * 2
+  else switch (methodID)
   {
     case kLZMA: numAlgoThreadsMax = 2; break;
-    case kLZMA2: numAlgoThreadsMax = 256; break;
-    case kBZip2: numAlgoThreadsMax = 32; break;
+    case kLZMA2: numAlgoThreadsMax = 256 * 2; break; // MTCODER_THREADS_MAX * 2
+    case kBZip2: numAlgoThreadsMax = 64; break;
     // case kZSTD: numAlgoThreadsMax = num_ZSTD_threads_MAX; break;
     case kCopy:
     case kPPMd:
@@ -2604,20 +2625,9 @@ void CCompressDialog::SetNumThreads2()
     case kPPMdZip:
       numAlgoThreadsMax = 1;
   }
-  const bool isZip = IsZipFormat();
-  if (isZip)
-  {
-    numAlgoThreadsMax =
-      #ifdef _WIN32
-        64; // _WIN32 supports only 64 threads in one group. So no need for more threads here
-      #else
-        128;
-      #endif
-  }
-
-  UInt32 autoThreads = numHardwareThreads;
+  UInt32 autoThreads = numCPUs;
   if (autoThreads > numAlgoThreadsMax)
-    autoThreads = numAlgoThreadsMax;
+      autoThreads = numAlgoThreadsMax;
 
   const UInt64 memUse_Limit = Get_MemUse_Bytes();
 
@@ -2672,13 +2682,12 @@ void CCompressDialog::SetNumThreads2()
 
   int curSel = -1;
   {
-    AString s;
+    s.Empty();
     s.Add_UInt32(autoThreads);
     if (autoThreads == 0) s += k_ST_Threads;
     Modify_Auto(s);
-    const int index = (int)ComboBox_AddStringAscii(m_NumThreads, s);
-    m_NumThreads.SetItemData(index, (LPARAM)(INT_PTR)(-1));
-    // m_NumThreads.SetItemData(index, autoThreads);
+    const int index = (int)ComboBox_AddStringAscii_SetItemData(m_NumThreads,
+        s, (LPARAM)(INT_PTR)(-1));
     if (useAutoThreads)
       curSel = index;
   }
@@ -2689,11 +2698,11 @@ void CCompressDialog::SetNumThreads2()
       1;
       i <= numHardwareThreads * 2 && i <= numAlgoThreadsMax; i++)
   {
-    AString s;
+    s.Empty();
     s.Add_UInt32(i);
     if (i == 0) s += k_ST_Threads;
-    const int index = (int)ComboBox_AddStringAscii(m_NumThreads, s);
-    m_NumThreads.SetItemData(index, (LPARAM)(UInt32)i);
+    const int index = (int)ComboBox_AddStringAscii_SetItemData(m_NumThreads,
+        s, (LPARAM)(UInt32)i);
     if (!useAutoThreads && i == defaultValue)
       curSel = index;
   }
@@ -2750,9 +2759,7 @@ int CCompressDialog::AddMemComboItem(UInt64 val, bool isPercent, bool isDefault)
         sRegistry.DeleteBack();
   }
   const unsigned dataIndex = _memUse_Strings.Add(sRegistry);
-  const int index = (int)m_MemUse.AddString(sUser);
-  m_MemUse.SetItemData(index, (LPARAM)dataIndex);
-  return index;
+  return (int)m_MemUse.AddString_SetItemData(sUser, (LPARAM)dataIndex);
 }
 
 
@@ -2999,7 +3006,7 @@ UInt64 CCompressDialog::GetMemoryUsage_Threads_Dict_DecompMem(UInt32 numThreads,
       else
       {
         size += numBlockThreads * (size1 + chunkSize);
-        UInt32 numPackChunks = numBlockThreads + (numBlockThreads / 8) + 1;
+        const UInt32 numPackChunks = numBlockThreads + (numBlockThreads / 8) + 1;
         if (chunkSize < ((UInt32)1 << 26)) numBlockThreads++;
         if (chunkSize < ((UInt32)1 << 24)) numBlockThreads++;
         if (chunkSize < ((UInt32)1 << 22)) numBlockThreads++;
@@ -3435,11 +3442,7 @@ static const unsigned kTimePrec_1ns  = 3;
 static void AddTimeOption(UString &s, UInt32 val, const UString &unit, const char *sys = NULL)
 {
   // s += " : ";
-  {
-    AString s2;
-    s2.Add_UInt32(val);
-    s += s2;
-  }
+  s.Add_UInt32(val);
   s.Add_Space();
   s += unit;
   if (sys)
@@ -3472,9 +3475,7 @@ int COptionsDialog::AddPrec(unsigned prec, bool isDefault)
   }
   else
     s.Add_UInt32(prec);
-  const int index = (int)m_Prec.AddString(s);
-  m_Prec.SetItemData(index, (LPARAM)writePrec);
-  return index;
+  return (int)m_Prec.AddString_SetItemData(s, (LPARAM)writePrec);
 }
 
 

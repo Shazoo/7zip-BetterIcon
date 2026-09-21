@@ -6,6 +6,7 @@
 
 #include "../Common/IntToString.h"
 #include "../Common/StringConvert.h"
+#include "../Common/StringToInt.h"
 
 #ifdef _WIN32
 
@@ -22,7 +23,7 @@
 
 #if defined(__GLIBC__) && (__GLIBC__ * 100 + __GLIBC_MINOR__ >= 216)
   #define Z7_GETAUXV_AVAILABLE
-#else
+#elif !defined(__QNXNTO__)
 //  #pragma message("=== is not NEW GLIBC === ")
   #if defined __has_include
   #if __has_include (<sys/auxv.h>)
@@ -58,7 +59,7 @@
 
 #ifdef USE_HWCAP
 
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 
 // #if (__FreeBSD__ >= 13) // (FreeBSD 12.01 is required for elf_aux_info() ???)
 static unsigned long MY_getauxval(int aux)
@@ -104,6 +105,7 @@ using namespace NWindows;
 
 static bool ReadFile_to_Buffer(CFSTR fileName, CByteBuffer &buf)
 {
+  buf.Free();
   NWindows::NFile::NIO::CInFile file;
   if (!file.Open(fileName))
     return false;
@@ -134,6 +136,15 @@ static bool ReadFile_to_Buffer(CFSTR fileName, CByteBuffer &buf)
     size += processed;
     addSize *= 2;
   }
+}
+
+static bool ReadFile_to_String(CFSTR fileName, AString &s)
+{
+  CByteBuffer buf;
+  if (!ReadFile_to_Buffer(fileName, buf))
+    return false;
+  s.SetFrom_CalcLen((const char *)(const void *)(const Byte *)buf, (unsigned)buf.Size());
+  return true;
 }
 
 #endif
@@ -358,11 +369,8 @@ static const char * const k_PF[] =
 static void PrintPage(AString &s, UInt64 v)
 {
   const char *t = "B";
-  if ((v & 0x3ff) == 0)
-  {
-    v >>= 10;
-    t = "KB";
-  }
+       if ((v & ((1 << 20) - 1)) == 0) { v >>= 20;  t = "MB"; }
+  else if ((v & ((1 << 10) - 1)) == 0) { v >>= 10;  t = "KB"; }
   s.Add_UInt64(v);
   s += t;
 }
@@ -530,6 +538,28 @@ struct CCpuName
   AString Microcode;
   AString LargePages;
 
+#ifdef _WIN32
+  UInt32 MHz;
+
+#ifdef MY_CPU_ARM64
+#define Z7_SYS_INFO_SHOW_ARM64_REGS
+#endif
+#ifdef Z7_SYS_INFO_SHOW_ARM64_REGS
+  bool Arm64_ISAR0_EL1_Defined;
+  UInt64 Arm64_ISAR0_EL1;
+#endif
+#endif
+
+#ifdef _WIN32
+  CCpuName():
+      MHz(0)
+#ifdef Z7_SYS_INFO_SHOW_ARM64_REGS
+    , Arm64_ISAR0_EL1_Defined(false)
+    , Arm64_ISAR0_EL1(0)
+#endif
+    {}
+#endif
+
   void Fill();
 
   void Get_Revision_Microcode_LargePages(AString &s)
@@ -537,16 +567,46 @@ struct CCpuName
     s.Empty();
     AddBracedString(s, Revision);
     AddBracedString(s, Microcode);
-    s.Add_OptSpaced(LargePages);
+#ifdef _WIN32
+    if (MHz != 0)
+    {
+      s.Add_Space_if_NotEmpty();
+      s.Add_UInt32(MHz);
+      s += " MHz";
+    }
+#endif
+    if (!LargePages.IsEmpty())
+      s.Add_OptSpaced(LargePages);
   }
+
+#ifdef Z7_SYS_INFO_SHOW_ARM64_REGS
+  void Get_Registers(AString &s)
+  {
+    if (Arm64_ISAR0_EL1_Defined)
+    {
+      // ID_AA64ISAR0_EL1
+      s.Add_OptSpaced("cp4030:");
+      PrintHex(s, Arm64_ISAR0_EL1);
+      {
+        const unsigned sha2 = ((unsigned)(Arm64_ISAR0_EL1 >> 12) & 0xf) - 1;
+        if (sha2 < 2)
+        {
+          s += ":SHA256";
+          if (sha2)
+            s += ":SHA512";
+        }
+      }
+    }
+  }
+#endif
 };
 
 void CCpuName::Fill()
 {
-  CpuName.Empty();
-  Revision.Empty();
-  Microcode.Empty();
-  LargePages.Empty();
+  // CpuName.Empty();
+  // Revision.Empty();
+  // Microcode.Empty();
+  // LargePages.Empty();
 
   AString &s = CpuName;
 
@@ -600,21 +660,32 @@ void CCpuName::Fill()
           Revision += GetAnsiString(name);
         }
       }
+#ifdef _WIN32
+      key.GetValue_UInt32_IfOk(TEXT("~MHz"), MHz);
+#ifdef Z7_SYS_INFO_SHOW_ARM64_REGS
+/*
+mapping arm64 registers to Windows registry:
+CP 4000: MIDR_EL1
+CP 4020: ID_AA64PFR0_EL1
+CP 4021: ID_AA64PFR1_EL1
+CP 4028: ID_AA64DFR0_EL1
+CP 4029: ID_AA64DFR1_EL1
+CP 402C: ID_AA64AFR0_EL1
+CP 402D: ID_AA64AFR1_EL1
+CP 4030: ID_AA64ISAR0_EL1
+CP 4031: ID_AA64ISAR1_EL1
+CP 4038: ID_AA64MMFR0_EL1
+CP 4039: ID_AA64MMFR1_EL1
+CP 403A: ID_AA64MMFR2_EL1
+*/
+      if (key.GetValue_UInt64_IfOk(TEXT("CP 4030"), Arm64_ISAR0_EL1) == ERROR_SUCCESS)
+        Arm64_ISAR0_EL1_Defined = true;
+#endif
+#endif
       LONG res[2];
       CByteBuffer bufs[2];
-      {
-        for (unsigned i = 0; i < 2; i++)
-        {
-          UInt32 size = 0;
-          res[i] = key.QueryValue(i == 0 ?
-              TEXT("Previous Update Revision") :
-              TEXT("Update Revision"),
-              bufs[i], size);
-          if (res[i] == ERROR_SUCCESS)
-            if (size != bufs[i].Size())
-              res[i] = ERROR_SUCCESS + 1;
-        }
-      }
+      res[0] = key.QueryValue_Binary(TEXT("Previous Update Revision"), bufs[0]);
+      res[1] = key.QueryValue_Binary(TEXT("Update Revision"),          bufs[1]);
       if (res[0] == ERROR_SUCCESS || res[1] == ERROR_SUCCESS)
       {
         for (unsigned i = 0; i < 2; i++)
@@ -674,6 +745,23 @@ void CCpuName::Fill()
   #endif
 }
 
+
+#if 0 && defined(Z7_LARGE_PAGES) && defined(__linux__)
+bool Get_HugePageSize(UInt64 &pageSize);
+bool Get_HugePageSize(UInt64 &pageSize)
+{
+  AString s2;
+  if (ReadFile_to_String("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", s2))
+  {
+    pageSize = ConvertStringToUInt64(s2.Ptr(), NULL);
+    if (pageSize)
+      return true;
+  }
+  return false;
+}
+#endif
+
+
 void AddCpuFeatures(AString &s);
 void AddCpuFeatures(AString &s)
 {
@@ -717,24 +805,56 @@ void AddCpuFeatures(AString &s)
 
   #ifdef __linux__
 
-  CByteBuffer buf;
-  if (ReadFile_to_Buffer("/sys/kernel/mm/transparent_hugepage/enabled", buf))
-  // if (ReadFile_to_Buffer("/proc/cpuinfo", buf))
   {
-    s.Add_OptSpaced("THP:");
     AString s2;
-    s2.SetFrom_CalcLen((const char *)(const void *)(const Byte *)buf, (unsigned)buf.Size());
-    const int pos = s2.Find('[');
-    if (pos >= 0)
+    if (ReadFile_to_String("/proc/meminfo", s2))
     {
-      const int pos2 = s2.Find(']', (unsigned)pos + 1);
-      if (pos2 >= 0)
+      const int pos = s2.Find("Hugepagesize:");
+      if (pos >= 0)
       {
-        s2.DeleteFrom((unsigned)pos2);
-        s2.DeleteFrontal((unsigned)pos + 1);
+        s.Add_OptSpaced("HPS:");
+        s2.DeleteFrontal((unsigned)pos + 13); // 13 == strlen("Hugepagesize:")
+        s2.TrimLeft();
+        // const int pos2 = s2.Find("kB");
+        const UInt64 size = ConvertStringToUInt64(s2.Ptr(), NULL);
+        if (size)
+          PrintPage(s, size << 10);
       }
     }
-    s += s2;
+    
+    if (ReadFile_to_String("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", s2))
+    {
+      s.Add_OptSpaced("THPS:");
+      const UInt64 size = ConvertStringToUInt64(s2.Ptr(), NULL);
+      if (size)
+        PrintPage(s, size);
+    }
+    /*
+    {
+      UInt64 pagesSize;
+      if (Get_HugePageSize(pagesSize) && pagesSize)
+      {
+        s.Add_OptSpaced("THPS:");
+        PrintPage(s, pagesSize);
+      }
+    }
+    */
+    
+    if (ReadFile_to_String("/sys/kernel/mm/transparent_hugepage/enabled", s2))
+    {
+      s.Add_OptSpaced("THP:");
+      const int pos = s2.Find('[');
+      if (pos >= 0)
+      {
+        const int pos2 = s2.Find(']', (unsigned)pos + 1);
+        if (pos2 >= 0)
+        {
+          s2.DeleteFrom((unsigned)pos2);
+          s2.DeleteFrontal((unsigned)pos + 1);
+        }
+      }
+      s += s2;
+    }
   }
   // else throw CSystemException(MY_SRes_HRESULT_FROM_WRes(errno));
 
@@ -747,9 +867,18 @@ void AddCpuFeatures(AString &s)
     unsigned long h = MY_getauxval(AT_HWCAP);
     PrintHex(s, h);
     #ifdef MY_CPU_ARM64
+#ifndef HWCAP_SHA3
+#define HWCAP_SHA3    (1 << 17)
+#endif
+#ifndef HWCAP_SHA512
+#define HWCAP_SHA512  (1 << 21)
+// #pragma message("=== HWCAP_SHA512 define === ")
+#endif
     if (h & HWCAP_CRC32)  s += ":CRC32";
     if (h & HWCAP_SHA1)   s += ":SHA1";
     if (h & HWCAP_SHA2)   s += ":SHA2";
+    if (h & HWCAP_SHA3)   s += ":SHA3";
+    if (h & HWCAP_SHA512) s += ":SHA512";
     if (h & HWCAP_AES)    s += ":AES";
     if (h & HWCAP_ASIMD)  s += ":ASIMD";
     #elif defined(MY_CPU_ARM)
@@ -908,11 +1037,16 @@ void GetSystemInfoText(AString &sRes)
       }
     }
     {
-      AString s;
-      GetCpuName_MultiLine(s);
+      AString s, registers;
+      GetCpuName_MultiLine(s, registers);
       if (!s.IsEmpty())
       {
         sRes += s;
+        sRes.Add_LF();
+      }
+      if (!registers.IsEmpty())
+      {
+        sRes += registers;
         sRes.Add_LF();
       }
     }
@@ -932,8 +1066,8 @@ void GetSystemInfoText(AString &sRes)
 }
 
 
-void GetCpuName_MultiLine(AString &s);
-void GetCpuName_MultiLine(AString &s)
+void GetCpuName_MultiLine(AString &s, AString &registers);
+void GetCpuName_MultiLine(AString &s, AString &registers)
 {
   CCpuName cpuName;
   cpuName.Fill();
@@ -945,6 +1079,10 @@ void GetCpuName_MultiLine(AString &s)
     s.Add_LF();
     s += s2;
   }
+  registers.Empty();
+#ifdef Z7_SYS_INFO_SHOW_ARM64_REGS
+  cpuName.Get_Registers(registers);
+#endif
 }
 
 

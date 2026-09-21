@@ -871,14 +871,27 @@ struct CAffinityMode
   unsigned NumCoreThreads;
   unsigned NumCores;
   // unsigned DivideNum;
+
+#ifdef _WIN32
+  unsigned NumGroups;
+#endif
+
   UInt32 Sizes[NUM_CPU_LEVELS_MAX];
 
   void SetLevels(unsigned numCores, unsigned numCoreThreads);
   DWORD_PTR GetAffinityMask(UInt32 bundleIndex, CCpuSet *cpuSet) const;
   bool NeedAffinity() const { return NumBundleThreads != 0; }
 
+#ifdef _WIN32
+  bool NeedGroupsMode() const { return NumGroups > 1; }
+#endif
+
   WRes CreateThread_WithAffinity(NWindows::CThread &thread, THREAD_FUNC_TYPE startAddress, LPVOID parameter, UInt32 bundleIndex) const
   {
+#ifdef _WIN32
+    if (NeedGroupsMode()) // we need fix for bundleIndex usage
+      return thread.Create_With_Group(startAddress, parameter, bundleIndex % NumGroups);
+#endif
     if (NeedAffinity())
     {
       CCpuSet cpuSet;
@@ -892,6 +905,9 @@ struct CAffinityMode
     NumBundleThreads(0),
     NumLevels(0),
     NumCoreThreads(1)
+#ifdef _WIN32
+    , NumGroups(0)
+#endif
     // DivideNum(1)
     {}
 };
@@ -1288,22 +1304,28 @@ HRESULT CEncoderInfo::Generate()
     if (scp)
     {
       const UInt64 reduceSize = kBufferSize;
-      
-      /* in posix new thread uses same affinity as parent thread,
+      /* in posix : new thread uses same affinity as parent thread,
          so we don't need to send affinity to coder in posix */
-      UInt64 affMask;
-      #if !defined(Z7_ST) && defined(_WIN32)
+      UInt64 affMask = 0;
+      UInt32 affinityGroup = (UInt32)(Int32)-1;
+      // UInt64 affinityInGroup = 0;
+#if !defined(Z7_ST) && defined(_WIN32)
       {
         CCpuSet cpuSet;
-        affMask = AffinityMode.GetAffinityMask(EncoderIndex, &cpuSet);
+        if (AffinityMode.NeedGroupsMode()) // we need fix for affinityInGroup also
+          affinityGroup = EncoderIndex % AffinityMode.NumGroups;
+        else
+          affMask = AffinityMode.GetAffinityMask(EncoderIndex, &cpuSet);
       }
-      #else
-        affMask = 0;
-      #endif
-      // affMask <<= 3; // debug line: to test no affinity in coder;
-      // affMask = 0;
-
-      RINOK(method.SetCoderProps_DSReduce_Aff(scp, &reduceSize, (affMask != 0 ? &affMask : NULL)))
+#endif
+      // affMask <<= 3; // debug line: to test no affinity in coder
+      // affMask = 0; // for debug
+      // affinityGroup = 0; // for debug
+      // affinityInGroup = 1; // for debug
+      RINOK(method.SetCoderProps_DSReduce_Aff(scp, &reduceSize,
+          affMask != 0 ? &affMask : NULL,
+          affinityGroup != (UInt32)(Int32)-1 ? &affinityGroup : NULL,
+          /* affinityInGroup != 0 ? &affinityInGroup : */ NULL))
     }
     else
     {
@@ -2298,6 +2320,28 @@ HRESULT CCrcInfo_Base::Generate(const Byte *data, size_t size)
 }
 
 
+#if 1
+#define HashUpdate(hf, data, size)  hf->Update(data, size)
+#else
+// for debug:
+static void HashUpdate(IHasher *hf, const void *data, UInt32 size)
+{
+  for (;;)
+  {
+    if (size == 0)
+      return;
+    UInt32 size2 = (size * 0x85EBCA87) % size / 8;
+    // UInt32 size2 = size / 2;
+    if (size2 == 0)
+      size2 = 1;
+    hf->Update(data, size2);
+    data = (const void *)((const Byte *)data + size2);
+    size -= size2;
+  }
+}
+#endif
+
+
 HRESULT CCrcInfo_Base::CrcProcess(UInt64 numIterations,
     const UInt32 *checkSum, IHasher *hf,
     IBenchPrintCallback *callback)
@@ -2328,7 +2372,7 @@ HRESULT CCrcInfo_Base::CrcProcess(UInt64 numIterations,
       const size_t rem = size - pos;
       const UInt32 kStep = ((UInt32)1 << 31);
       const UInt32 curSize = (rem < kStep) ? (UInt32)rem : kStep;
-      hf->Update(buf + pos, curSize);
+      HashUpdate(hf, buf + pos, curSize);
       pos += curSize;
     }
     while (pos != size);
@@ -2742,14 +2786,20 @@ static const CBenchHash g_Hash[] =
   {  2,   128 *ARM_CRC_MUL, 0x21e207bb, "CRC32:32" },
   {  2,    64 *ARM_CRC_MUL, 0x21e207bb, "CRC32:64" },
   { 10,   256, 0x41b901d1, "CRC64" },
-  { 10,    64, 0x43eac94f, "XXH64" },
-  
-  { 10, 5100,       0x7913ba03, "SHA256:1" },
-  {  2, CMPLX((32 * 4 + 1) * 4 + 4), 0x7913ba03, "SHA256:2" },
-  
-  { 10, 2340,       0xff769021, "SHA1:1" },
+  {  5,    64, 0x43eac94f, "XXH64" },
+  {  2,  2340, 0x3398a904, "MD5" },
+  { 10,  2340,                       0xff769021, "SHA1:1" },
   {  2, CMPLX((20 * 6 + 1) * 4 + 4), 0xff769021, "SHA1:2" },
-  
+  { 10,  5100,                       0x7913ba03, "SHA256:1" },
+  {  2, CMPLX((32 * 4 + 1) * 4 + 4), 0x7913ba03, "SHA256:2" },
+  {  5,  3200,                       0xe7aeb394, "SHA512:1" },
+  {  2, CMPLX((40 * 4 + 1) * 4 + 4), 0xe7aeb394, "SHA512:2" },
+  // { 10, 3428,       0x1cc99b18, "SHAKE128" },
+  // { 10, 4235,       0x74eaddc3, "SHAKE256" },
+  // { 10, 4000,       0xdf3e6863, "SHA3-224" },
+  {  5, 4200,       0xcecac10d, "SHA3-256" },
+  // { 10, 5538,       0x4e5d9163, "SHA3-384" },
+  // { 10, 8000,       0x96a58289, "SHA3-512" },
   {  2,  4096, 0x85189d02, "BLAKE2sp:1" },
   {  2,  1024, 0x85189d02, "BLAKE2sp:2" }, // sse2-way4-fast
   {  2,   512, 0x85189d02, "BLAKE2sp:3" }  // avx2-way8-fast
@@ -2816,6 +2866,8 @@ static void PrintPercents(IBenchPrintCallback &f, UInt64 val, UInt64 divider, un
 static void PrintChars(IBenchPrintCallback &f, char c, unsigned size)
 {
   char s[256];
+  if (size >= sizeof(s))
+    size = sizeof(s) - 1;
   memset(s, (Byte)c, size);
   s[size] = 0;
   f.Print(s);
@@ -2934,7 +2986,7 @@ AString GetProcessThreadsInfo(const NSystem::CProcessAffinity &ti)
 {
   AString s;
   // s.Add_UInt32(ti.numProcessThreads);
-  unsigned numSysThreads = ti.GetNumSystemThreads();
+  const unsigned numSysThreads = ti.GetNumSystemThreads();
   if (ti.GetNumProcessThreads() != numSysThreads)
   {
     // if (ti.numProcessThreads != ti.numSysThreads)
@@ -2964,6 +3016,35 @@ AString GetProcessThreadsInfo(const NSystem::CProcessAffinity &ti)
     }
     #endif
   }
+#ifdef _WIN32
+  if (ti.Groups.GroupSizes.Size() > 1 ||
+      (ti.Groups.GroupSizes.Size() == 1
+       && ti.Groups.NumThreadsTotal != numSysThreads))
+  {
+    s += " : ";
+    s.Add_UInt32(ti.Groups.GroupSizes.Size());
+    s += " groups : ";
+    if (ti.Groups.NumThreadsTotal == numSysThreads)
+    {
+      s.Add_UInt32(ti.Groups.NumThreadsTotal);
+      s += " c : ";
+    }
+    UInt32 minSize, maxSize;
+    ti.Groups.Get_GroupSize_Min_Max(minSize, maxSize);
+    if (minSize == maxSize)
+    {
+      s.Add_UInt32(ti.Groups.GroupSizes[0]);
+      s += " c/g";
+    }
+    else
+    FOR_VECTOR (i, ti.Groups.GroupSizes)
+    {
+      if (i != 0)
+        s.Add_Space();
+      s.Add_UInt32(ti.Groups.GroupSizes[i]);
+    }
+  }
+#endif
   return s;
 }
 
@@ -2972,11 +3053,11 @@ AString GetProcessThreadsInfo(const NSystem::CProcessAffinity &ti)
 
 #ifdef _WIN32
 extern bool g_LargePagesMode;
+#endif
 extern "C"
 {
-  extern SIZE_T g_LargePageSize;
+  extern size_t g_LargePageSize;
 }
-#endif
 
 void Add_LargePages_String(AString &s)
 {
@@ -2991,10 +3072,14 @@ void Add_LargePages_String(AString &s)
     #endif
     if (!g_LargePagesMode)
       s += "-NA";
-    s += ")";
+    s.Add_Char(')');
   }
   #else
-    s += "";
+  if (g_LargePageSize != 0)
+  {
+    s.Add_OptSpaced(" (LP)");
+    // PrintSize_KMGT_Or_Hex(s, g_LargePageSize);
+  }
   #endif
 }
 
@@ -3687,17 +3772,18 @@ HRESULT Bench(
     return E_FAIL;
 
   UInt32 numCPUs = 1;
-  UInt64 ramSize = (UInt64)(sizeof(size_t)) << 29;
+  size_t ramSize = (size_t)sizeof(size_t) << 29;
 
   NSystem::CProcessAffinity threadsInfo;
   threadsInfo.InitST();
 
   #ifndef Z7_ST
 
-  if (threadsInfo.Get() && threadsInfo.GetNumProcessThreads() != 0)
-    numCPUs = threadsInfo.GetNumProcessThreads();
-  else
+  if (!threadsInfo.Get()
+      || (numCPUs = threadsInfo.GetNumProcessThreads()) == 0)
     numCPUs = NSystem::GetNumberOfProcessors();
+  // numCPUs : is number of threads assigned to process with affinity,
+  // or it's total number of threads in all groups, if IsGroupMode == true, and there is default affinity.
 
   #endif
 
@@ -3725,9 +3811,13 @@ HRESULT Bench(
   UInt64 complexInCommands = kComplexInCommands;
   UInt32 numThreads_Start = 1;
   
-  #ifndef Z7_ST
+#ifndef Z7_ST
   CAffinityMode affinityMode;
-  #endif
+#ifdef _WIN32
+  if (threadsInfo.IsGroupMode && threadsInfo.Groups.GroupSizes.Size() > 1)
+    affinityMode.NumGroups = threadsInfo.Groups.GroupSizes.Size();
+#endif
+#endif
 
 
   COneMethodInfo method;
@@ -3982,7 +4072,8 @@ HRESULT Bench(
           ));
         if (start >= freq * 16)
         {
-          printCallback->Print(" (Cmplx)");
+          if (printCallback)
+            printCallback->Print(" (Cmplx)");
           if (!freqCallback) // we don't want complexity change for old gui lzma benchmark
           {
             needSetComplexity = true;
@@ -4570,6 +4661,8 @@ HRESULT Bench(
     }
   }
  
+  if (!printCallback)
+    return E_NOTIMPL;
   IBenchPrintCallback &f = *printCallback;
 
   if (threadsPassIndex > 0)
@@ -4580,6 +4673,8 @@ HRESULT Bench(
 
   if (!dictIsDefined && !onlyHashBench)
   {
+    // we use dicSizeLog and dicSizeLog_Main for data size.
+    // also we use it to reduce dictionary size of LZMA encoder via NCoderPropID::kReduceSize.
     const unsigned dicSizeLog_Main = (totalBenchMode ? 24 : 25);
     unsigned dicSizeLog = dicSizeLog_Main;
     
@@ -4831,7 +4926,7 @@ HRESULT Bench(
         if (AreSameMethodNames(benchMethod, methodName))
         {
           if (benchProps.IsEmpty()
-              || (benchProps == "x5" && method.PropsString.IsEmpty())
+              || (benchProps.IsEqualTo("x5") && method.PropsString.IsEmpty())
               || method.PropsString.IsPrefixedBy_Ascii_NoCase(benchProps))
           {
             callback.BenchProps.EncComplex = h.EncComplex;

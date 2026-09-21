@@ -80,7 +80,7 @@ HRESULT CThreadFolderOperations::DoOperation(CPanel &panel, const UString &progr
 
   UpdateCallbackSpec->Init();
 
-  if (panel._parentFolders.Size() > 0)
+  if (!panel._parentFolders.IsEmpty())
   {
     const CFolderLink &fl = panel._parentFolders.Back();
     UpdateCallbackSpec->PasswordIsDefined = fl.UsePassword;
@@ -275,8 +275,8 @@ static bool IsCorrectFsName(const UString &name)
 {
   const UString lastPart = name.Ptr((unsigned)(name.ReverseFind_PathSepar() + 1));
   return
-      lastPart != L"." &&
-      lastPart != L"..";
+      !lastPart.IsEqualTo(".") &&
+      !lastPart.IsEqualTo("..");
 }
 
 bool CorrectFsPath(const UString &relBase, const UString &path, UString &result);
